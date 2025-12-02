@@ -11,6 +11,6 @@ fun main() = application {
         title = "GDGOC-IDE-PROJECT",
         icon = painterResource("icons/gdg.png")
     ) {
-        App()
+        App(onExitApplication = ::exitApplication)
     }
 }
