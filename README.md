@@ -1,27 +1,41 @@
-This is a Kotlin Multiplatform project targeting Desktop (JVM).
+# Running the Compose Project
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+This repository contains a simple Compose Multiplatform project. Follow the steps below to set it up and run it.
 
-### Build and Run Desktop (JVM) Application
+## 1. Clone the Repository
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
+```bash
+git clone https://github.com/USERNAME/REPOSITORY.git
+cd REPOSITORY
+```
+
+## 2. Verify Java/Gradle Settings in IntelliJ IDEA
+
+The project requires **Java 17**. Make sure IntelliJ is configured to use the correct Gradle JVM.
+
+Open:
+**File → Settings → Build, Execution, Deployment → Build Tools → Gradle**
+
+Then set:
+
+* **Gradle JVM:** `Java 17`
+
+(This is the last option inside the Gradle settings panel — double‑check it.)
+
+## 3. Run the Project
+
+Once IntelliJ finishes syncing:
+
+* Open the **Gradle** tool window
+* Run:
+
   ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
+  composeDesktop > run
   ```
 
----
+Or simply run `Main.kt` using the green **Run** button.
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+## 4. Notes
+
+* If you encounter errors like *"Unsupported class file major version"*, it means Gradle is not using Java 17.
+* If the build behaves unexpectedly, try: **File → Invalidate Caches & Restart**.
