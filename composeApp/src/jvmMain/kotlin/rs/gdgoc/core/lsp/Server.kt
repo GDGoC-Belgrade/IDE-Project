@@ -2,6 +2,7 @@ package rs.gdgoc.core.lsp
 
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.concurrent.TimeUnit
 
 class Server(private val config: LSPConfig) {
 
@@ -12,7 +13,7 @@ class Server(private val config: LSPConfig) {
         get() = process?.inputStream
     val outputStream: OutputStream?
         get() = process?.outputStream
-    val errStream: InputStream?
+    val errorStream: InputStream?
         get() = process?.errorStream
 
     fun start() {
@@ -44,7 +45,7 @@ class Server(private val config: LSPConfig) {
         isRunning = false
     }
 
-    fun isAlive(): Boolean = process?.isAlive ?: false
-
-    fun waitForExit(): Int = process?.waitFor() ?: -1
+    fun waitForExit(timeoutMillis: Long): Boolean {
+        return process?.waitFor(timeoutMillis, TimeUnit.MILLISECONDS) ?: false
+    }
 }
