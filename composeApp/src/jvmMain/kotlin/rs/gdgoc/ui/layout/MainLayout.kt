@@ -22,10 +22,14 @@ import rs.gdgoc.ui.editor.TabScreen
 import rs.gdgoc.ui.panels.ConsolePanel
 import rs.gdgoc.ui.panels.HierarchyPanel
 import rs.gdgoc.ui.panels.RightSidebarPanel
+import rs.gdgoc.core.TerminalState
 
 
 @Composable
 fun MainLayout() {
+    //terminal state
+    val terminalState = remember { TerminalState() }
+
     Row(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -37,7 +41,7 @@ fun MainLayout() {
         ) {}
 
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            VerticalEditorLayout()
+            VerticalEditorLayout(terminalState)
         }
 
         Column(
@@ -53,7 +57,7 @@ fun MainLayout() {
 
 @OptIn(ExperimentalSplitPaneApi::class)
 @Composable
-private fun VerticalEditorLayout() {
+private fun VerticalEditorLayout(terminalState: TerminalState) {
     val mainSplitPaneState = remember {
         SplitPaneState(
             initialPositionPercentage = 0.8f,
@@ -68,7 +72,7 @@ private fun VerticalEditorLayout() {
             MainWorkspace()
         }
         second {
-            ConsolePanel()
+            ConsolePanel(terminalState)
         }
     }
 }
