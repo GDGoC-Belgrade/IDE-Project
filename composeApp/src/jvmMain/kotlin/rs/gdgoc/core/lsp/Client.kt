@@ -9,10 +9,17 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import java.io.BufferedReader
@@ -24,10 +31,17 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class Client(config: LSPConfig) {
 
+    private companion object {
+        const val RESPONSE_TIMEOUT = 10000L
+        const val SHUTDOWN_TIMEOUT_1 = 2000L
+        const val SHUTDOWN_TIMEOUT_2 = 5000L
+    }
+
     private val server: Server = Server(config)
     private val requestIdCounter = AtomicInteger(0)
     private val pendingRequests = ConcurrentHashMap<Int, CompletableDeferred<LSPResponse>>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val writeMutex = Mutex()
 
     private var writer: BufferedWriter? = null
     private var reader: BufferedReader? = null
@@ -53,26 +67,29 @@ class Client(config: LSPConfig) {
         }
     }
 
+    fun initialize(params: Map<String, Any>? = null): LSPResponse? = runBlocking {
+        val response = sendRequest("initialize", params)
+        if (response == null || response.error != null) return@runBlocking null
+        sendNotification("initialized")
+        return@runBlocking response
+    }
+
     fun stop() {
         // Try graceful shutdown via LSP
         runBlocking {
-            try {
-                withTimeout(2000) {
-                    sendRequest("shutdown", null)
-                    sendNotification("exit", null)
-                }
-            } catch (e: TimeoutCancellationException) {}
+            sendRequest("shutdown", null)
+            sendNotification("exit", null)
         }
 
         writer?.close()
         reader?.close()
         scope.cancel()
 
-        if (!server.waitForExit(2000)) {
-            // If graceful didn't work, stop the process manually
+        if (!server.waitForExit(SHUTDOWN_TIMEOUT_1)) {
+            // Graceful didn't work, stop the process manually
             server.stop()
 
-            if (!server.waitForExit(5000)) {
+            if (!server.waitForExit(SHUTDOWN_TIMEOUT_2)) {
                 // Last resort, kill it forcefully
                 server.forceStop()
             }
@@ -81,7 +98,8 @@ class Client(config: LSPConfig) {
         pendingRequests.clear()
     }
 
-    suspend fun sendRequest(method: String, params: Map<String, Any>? = null): LSPResponse {
+    // Returns LSPResponse or null if the response doesn't come in RESPONSE_TIMEOUT milliseconds
+    suspend fun sendRequest(method: String, params: Map<String, Any>? = null): LSPResponse? {
         val id = requestIdCounter.getAndIncrement();
 
         // Instantiate a future object
@@ -89,31 +107,33 @@ class Client(config: LSPConfig) {
         pendingRequests[id] = deferred
         sendMessage(buildJsonRequest(id, method, params))
 
-        // Wait for the future object (timeout at 10 seconds)
-        return withTimeout(10000) {
+        // Wait for the future object (timeout at RESPONSE_TIMEOUT milliseconds)
+        return withTimeout(RESPONSE_TIMEOUT) {
             try {
                 deferred.await()
             } catch (e: TimeoutCancellationException) {
                 pendingRequests.remove(id)
-                // TODO: handle timeout error
-                throw e
+                null
             }
         }
     }
 
-    fun sendNotification(method: String, params: Map<String, Any>? = null) {
-        scope.launch {
-            sendMessage(buildJsonNotification(method, params))
-        }
+    suspend fun sendNotification(method: String, params: Map<String, Any>? = null) {
+        sendMessage(buildJsonNotification(method, params))
     }
 
     private suspend fun sendMessage(jsonMessage: String) = withContext(Dispatchers.IO) {
         val contentBytes = jsonMessage.toByteArray(Charsets.UTF_8)
         val header = "Content-Length: ${contentBytes.size}\r\n\r\n"
 
-        writer?.write(header)
-        writer?.write(jsonMessage)
-        writer?.flush()
+        // Write header and content and flush the writer atomically
+        writeMutex.withLock {
+            writer?.let {
+                it.write(header)
+                it.write(jsonMessage)
+                it.flush()
+            }
+        }
     }
 
     private suspend fun messageListener() = withContext(Dispatchers.IO) {
@@ -127,16 +147,17 @@ class Client(config: LSPConfig) {
         val errorReader = BufferedReader(InputStreamReader(server.errorStream ?: throw IllegalStateException("The server error stream is null")))
         while (isActive) {
             val error = errorReader.readLine() ?: break
+            println("Error: $error")
             // TODO: handle different errors
         }
     }
 
-    private fun readMessage(): String? {
+    private suspend fun readMessage(): String? = withContext(Dispatchers.IO) {
         var contentLength = -1
 
         // Read headers
         while (true) {
-            val line = reader?.readLine() ?: return null
+            val line = reader?.readLine() ?: return@withContext null
             if (line.isEmpty()) break
 
             if (line.startsWith("Content-Length:")) {
@@ -144,66 +165,69 @@ class Client(config: LSPConfig) {
             }
         }
 
-        if (contentLength < 0) return null
+        if (contentLength < 0) return@withContext null
 
         // Read content
         val buffer = CharArray(contentLength)
         var totalRead = 0
         while (totalRead < contentLength) {
             val read = reader?.read(buffer, totalRead, contentLength - totalRead) ?: -1
-            if (read == -1) return null
+            if (read == -1) return@withContext null
             totalRead += read
         }
 
-        return String(buffer)
+        return@withContext String(buffer)
     }
 
     private fun processMsg(jsonMsg: String) {
-        try {
-            val jsonObject = json.parseToJsonElement(jsonMsg).jsonObject
-            val hasId = jsonObject.containsKey("id")
-            val hasMethod = jsonObject.containsKey("method")
+        val jsonObject = json.parseToJsonElement(jsonMsg).jsonObject
+        val hasId = jsonObject.containsKey("id")
+        val hasMethod = jsonObject.containsKey("method")
 
-            when {
-                hasId && hasMethod -> handleServerRequest(buildRequestFromJson(jsonMsg))
-                !hasId && hasMethod -> handleServerNotification(buildNotificationFromJson(jsonMsg))
-                hasId && !hasMethod -> handleServerResponse(buildResponseFromJson(jsonMsg))
-                else -> throw IllegalArgumentException("Invalid message type")
+        when {
+            hasId && hasMethod -> handleServerRequest(buildRequestFromJson(jsonMsg))
+            !hasId && hasMethod -> handleServerNotification(buildNotificationFromJson(jsonMsg))
+            hasId && !hasMethod -> handleServerResponse(buildResponseFromJson(jsonMsg))
+            else -> {
+                // Malformed message
+                println("Malformed message: $jsonMsg")
             }
-        } catch (e: Exception) {
-            // TODO: handle malformed messages
         }
     }
 
     private fun handleServerResponse(response: LSPResponse) {
         val deferred = pendingRequests.remove(response.id)
+        // Set the future object, thus unblocking the coroutine waiting on it
         deferred?.complete(response)
     }
 
     private fun handleServerRequest(request: LSPRequest) {
         // TODO: handle different requests
+        println("Server request: $request")
+        // Return the response
         scope.launch {
-            sendMessage(buildJsonResponse(request.id, null, null))
+            sendMessage(buildJsonResponse(request.id)) // TODO: set result or error
         }
     }
 
     private fun handleServerNotification(notification: LSPNotification) {
         // TODO: handle different notifications
+        println("Server notification: $notification")
     }
 
     private fun buildJsonRequest(id: Int, method: String, params: Map<String, Any>? = null): String {
-        val jsonParams = params?.let { json.encodeToJsonElement(it) }
+        val jsonParams = params?.let { json.encodeToJsonElement(anyToJson(it)) }
         return json.encodeToString(LSPRequest(id=id, method=method, params=jsonParams))
     }
 
     private fun buildJsonNotification(method: String, params: Map<String, Any>? = null): String {
-        val jsonParams = params?.let { json.encodeToJsonElement(it) }
+        val jsonParams = params?.let { json.encodeToJsonElement(anyToJson(it)) }
         return json.encodeToString(LSPNotification(method=method, params=jsonParams))
     }
 
-    private fun buildJsonResponse(id: Int, result:Map<String, Any>? = null, error: LSPError? = null): String {
-        val jsonResult = result?.let { json.encodeToJsonElement(it) }
-        return json.encodeToString(LSPResponse(id=id, result=jsonResult, error=error))
+    private fun buildJsonResponse(id: Int, result:Map<String, Any>? = null): String {
+        val jsonResult = result?.let { json.encodeToJsonElement(anyToJson(it)) }
+        return json.encodeToString(LSPResponse(id=id, result=jsonResult))
     }
 
     private fun buildRequestFromJson(jsonRequest: String): LSPRequest {
@@ -217,4 +241,24 @@ class Client(config: LSPConfig) {
     private fun buildResponseFromJson(jsonResponse: String): LSPResponse {
         return json.decodeFromString<LSPResponse>(jsonResponse)
     }
+
+    // Map<String, Any> can't be converted to JSON, so we must transform it recursively into JsonElement
+    private fun anyToJson(value: Any?): JsonElement =
+        when (value) {
+            null -> JsonNull
+            is String -> JsonPrimitive(value)
+            is Number -> JsonPrimitive(value)
+            is Boolean -> JsonPrimitive(value)
+            is Map<*, *> -> buildJsonObject {
+                value.forEach { (k, v) ->
+                    if (k is String) put(k, anyToJson(v))
+                }
+            }
+
+            is List<*> -> buildJsonArray {
+                value.forEach { add(anyToJson(it)) }
+            }
+
+            else -> throw IllegalArgumentException("Unsupported type: ${value::class}")
+        }
 }
