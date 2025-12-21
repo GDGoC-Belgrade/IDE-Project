@@ -34,7 +34,12 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 
 @Composable
-fun OpeningPage() {
+fun OpeningPage(
+                onNewProject: () -> Unit,
+                onOpenProject: () -> Unit = {},
+                onCloneRepository: () -> Unit = {},
+                onSettings: () -> Unit = {}
+    ) {
 
     // Box to align content
     Box(
@@ -82,24 +87,42 @@ fun OpeningPage() {
                 // TODO: add  icons
                 SquareButton(
                     "New Project",
-                    icon = null
+                    icon = {
+                        Image(
+                            painter = painterResource("icons/addIcon.svg"),
+                            contentDescription = "New Project",
+                            modifier = Modifier.size(50.dp)
+                        )
+                    }
                 ) {
                     // Button functionality
-                    println("New Project clicked")
+                    onNewProject()
                 }
                 SquareButton(
                     "Open",
-                    icon = null
+                    icon = {
+                        Image(
+                            painter = painterResource("icons/openIcon.svg"),
+                            contentDescription = "Open Existing Project",
+                            modifier = Modifier.size(50.dp)
+                        )
+                    }
                 ) {
                     // Button functionality
-                    println("Open clicked")
+                    onOpenProject()
                 }
                 SquareButton(
                     "Clone Repository",
-                    icon = null
+                    icon = {
+                        Image(
+                            painter = painterResource("icons/gitIcon.svg"),
+                            contentDescription = "Clone Repository",
+                            modifier = Modifier.size(50.dp)
+                        )
+                    }
                 ) {
                     // Button functionality
-                    println("Clone Repository clicked")
+                    onCloneRepository()
                 }
             }
         }
@@ -108,7 +131,8 @@ fun OpeningPage() {
         SettingsButton(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(16.dp)
+                .padding(16.dp),
+            onClick=onSettings
         )
     }
 }
@@ -116,18 +140,22 @@ fun OpeningPage() {
 
 // Placeholder button UI
 @Composable
-fun SettingsButton(modifier: Modifier = Modifier) {
+fun SettingsButton(  modifier: Modifier = Modifier,
+                     onClick: () -> Unit) {
     Box(
         modifier = modifier
             .size(35.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFE0E0E0))
             .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-            .clickable { println("Settings clicked") },
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // TODO: add icon
-        Text("S", fontSize = 20.sp)
+        Image(
+            painter = painterResource("icons/settingsIcon.svg"),
+            contentDescription = "Settings",
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
