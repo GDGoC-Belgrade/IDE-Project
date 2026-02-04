@@ -22,25 +22,25 @@ import rs.gdgoc.core.TerminalState
 
 @Composable
 fun ConsolePanel(terminalState: TerminalState) {
-    //ui automatically updates when state changes
+    // ui automatically updates when state changes
 
     val listState = rememberLazyListState()
 
-    //runs whenever the number of terminal lines changes, it scrolls to the bottom
+    // runs whenever the number of terminal lines changes, it scrolls to the bottom
     LaunchedEffect(terminalState.lines.size) {
         if (terminalState.lines.isNotEmpty()) {
             listState.animateScrollToItem(terminalState.lines.size)
         }
     }
 
-    //current text the user is typing
+    // current text the user is typing
     var inputText by remember { mutableStateOf("") }
 
-    //command history and which command is currently browsed
+    // command history and which command is currently browsed
     val history = remember { mutableStateListOf<String>() }
     var historyIndex by remember { mutableStateOf(-1) }
 
-    //blinking cursor
+    // blinking cursor
     var cursorVisible by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -49,7 +49,7 @@ fun ConsolePanel(terminalState: TerminalState) {
         }
     }
 
-    //automatically focuses the terminal
+    // automatically focuses the terminal
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -59,7 +59,7 @@ fun ConsolePanel(terminalState: TerminalState) {
             .background(Color(0xFF1E1E1E))
             .border(1.dp, Color(0xFF3C3C3C))
     ) {
-        //scrollable list of text, it displays all lines from terminal state and user input
+        // scrollable list of text, it displays all lines from terminal state and user input
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -68,7 +68,7 @@ fun ConsolePanel(terminalState: TerminalState) {
                 .padding(6.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            //output lines
+            // output lines
             itemsIndexed(terminalState.lines) { _, line ->
                 Text(
                     text = line,
@@ -77,7 +77,7 @@ fun ConsolePanel(terminalState: TerminalState) {
                 )
             }
 
-            //input line
+            // input line
             item {
                 val display =
                     "> " + inputText + if (cursorVisible) "|" else " "
@@ -90,7 +90,7 @@ fun ConsolePanel(terminalState: TerminalState) {
             }
         }
 
-        //key input handler
+        // key input handler
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -103,7 +103,7 @@ fun ConsolePanel(terminalState: TerminalState) {
 
                         when (event.key) {
 
-                            //ENTER - execute
+                            // ENTER - execute
                             Key.Enter -> {
                                 if (inputText.isNotBlank()) {
                                     terminalState.appendLine("> $inputText")
@@ -122,7 +122,7 @@ fun ConsolePanel(terminalState: TerminalState) {
                                 true
                             }
 
-                            //ARROW UP - previous command
+                            // ARROW UP - previous command
                             Key.DirectionUp -> {
                                 if (history.isNotEmpty()) {
                                     if (historyIndex < history.lastIndex) {
@@ -133,7 +133,7 @@ fun ConsolePanel(terminalState: TerminalState) {
                                 true
                             }
 
-                            //ARROW DOWN - next command
+                            // ARROW DOWN - next command
                             Key.DirectionDown -> {
                                 if (historyIndex > 0) {
                                     historyIndex--
