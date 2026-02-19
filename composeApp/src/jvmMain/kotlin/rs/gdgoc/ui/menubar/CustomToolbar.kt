@@ -52,9 +52,11 @@ fun CustomToolbar(
         CustomMenuDropdown(
             title = "Help",
             items = listOf(
-                MenuItem("About", {})
+                MenuItem("About", { AboutDialogState.show() })
             )
         )
+
+        AboutDialog()
 
         Spacer(modifier = Modifier.weight(1f))
 
