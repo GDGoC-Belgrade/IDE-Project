@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Divider
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,13 +21,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun TabScreen() {
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Tab 1", "Tab 2")
+
+    var tab1Content by remember {
+        mutableStateOf(TextFieldValue("fun main() {\n    println(\"Hello, Kotlin!\")\n}"))
+    }
+    var tab2Content by remember {
+        mutableStateOf(TextFieldValue("// Second tab\n// Write code here..."))
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -63,41 +70,17 @@ fun TabScreen() {
             }
         }
 
-        Divider(color = Color.LightGray, thickness = 1.dp)
+        HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
 
         when (selectedTabIndex) {
-            0 -> TabContent1()
-            1 -> TabContent2()
+            0 -> CodeEditorPanel(
+                content = tab1Content,
+                onValueChange = { tab1Content = it }
+            )
+            1 -> CodeEditorPanel(
+                content = tab2Content,
+                onValueChange = { tab2Content = it }
+            )
         }
-    }
-}
-
-@Composable
-fun TabContent1() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.TopStart
-    ) {
-        Text(
-            text = """
-                fun main() {
-                    println("Hello, Kotlin!")
-                }
-            """.trimIndent(),
-            fontSize = 16.sp,
-            lineHeight = 24.sp
-        )
-    }
-}
-
-@Composable
-fun TabContent2() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Jos neki kod ovde, ili prikazivanje neceg treceg.")
     }
 }
