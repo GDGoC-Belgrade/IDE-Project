@@ -1,19 +1,97 @@
-*.iml
-.kotlin
-.gradle
-**/build/
-xcuserdata
-!src/**/build/
-local.properties
-.idea
+# OS
 .DS_Store
-captures
-.externalNativeBuild
-.cxx
-*.xcodeproj/*
+Thumbs.db
+desktop.ini
+Icon?
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+workspace.xml
+.idea_modules/
+.vscode/
+.classpath
+.project
+.settings/
+
+# Gradle / build
+.gradle/
+.gradle-test-kit/
+build/
+**/build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin / compiler cache
+.kotlincache/
+.kotlin/
+*.kotlin_module
+
+# Compose Desktop / native distributions
+*.deb
+*.dmg
+*.msi
+*.AppImage
+*.exe
+
+# JVM / Java artifacts
+*.class
+*.jar
+*.war
+*.ear
+
+# Native / Android NDK / KMP native
+.externalNativeBuild/
+.cxx/
+captures/
+
+# Xcode (optional)
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+xcshareddata/
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
-node_modules/
+
+# Local configs / secrets / signing keys
+local.properties
+secrets.properties
+*.keystore
+*.jks
+.env
+.env.local
+
+# Logs / temp / editor swap
+*.log
+*.tmp
+*.orig
+*.swp
+*~
+
+# Node.js / web (optional)
+# node_modules/
+# /dist/
+# .webpack/
+
+# CI / distribution / misc
+/dist/
+/ci-artifacts/
+
+# Coverage / test outputs
+coverage/
+jacoco/
+*.exec
+*.lcov
+
+# Generic caches
+.cache/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar

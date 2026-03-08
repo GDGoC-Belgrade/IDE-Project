@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
+import rs.gdgoc.file_system.openFileExplorer
 import rs.gdgoc.ui.layout.MainLayout
 import rs.gdgoc.ui.menubar.CustomToolbar
 
@@ -18,7 +19,7 @@ fun App() {
         CustomToolbar(
             onRunClick = { println("Run clicked! ") },
             onNewFile = { println("New file") },
-            onOpenFile = { println("Open file") },
+            onOpenFile = {openFileExplorer()},
             onSaveFile = { println("Save file") },
             onExit = {}
         )
