@@ -16,7 +16,7 @@ import rs.gdgoc.ui.menubar.CustomToolbar
 fun App() {
     Column(modifier = Modifier.fillMaxSize()) {
         CustomToolbar(
-            onRunClick = { println("Run clicked! ") },
+            onRunClick = { Runner.start() },
             onNewFile = { println("New file") },
             onOpenFile = { println("Open file") },
             onSaveFile = { println("Save file") },

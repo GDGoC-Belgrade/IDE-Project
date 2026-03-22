@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -58,6 +59,16 @@ fun CustomToolbar(
 
         Spacer(modifier = Modifier.weight(1f))
 
+        Divider(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(1.dp)
+                .padding(vertical = 6.dp),
+            color = Color(0xFFBDBDBD)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Button(
             onClick = onRunClick,
             colors = ButtonDefaults.buttonColors(
@@ -65,10 +76,8 @@ fun CustomToolbar(
             ),
             modifier = Modifier.height(32.dp)
         ) {
-            Spacer(modifier = Modifier.width(4.dp))
             Text("Run", color = Color.White)
         }
 
-        Spacer(modifier = Modifier. weight(1f))
     }
 }
