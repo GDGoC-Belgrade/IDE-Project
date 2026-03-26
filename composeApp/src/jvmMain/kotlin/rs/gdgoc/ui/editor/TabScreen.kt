@@ -21,8 +21,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
 
 @Composable
 fun TabScreen() {
@@ -46,8 +53,7 @@ fun TabScreen() {
                 ) {
                     Text(
                         text = title,
-                        color = if (selectedTabIndex == index) Color.Black
-                        else Color.Gray
+                        color = if (selectedTabIndex == index) Color.Black else Color.Gray
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Box(
@@ -55,8 +61,7 @@ fun TabScreen() {
                             .fillMaxWidth()
                             .height(2.dp)
                             .background(
-                                if (selectedTabIndex == index) Color.Black
-                                else Color.Transparent
+                                if (selectedTabIndex == index) Color.Black else Color.Transparent
                             )
                     )
                 }
@@ -72,22 +77,76 @@ fun TabScreen() {
     }
 }
 
+// Computes 1-based line and column from a TextFieldValue
+fun cursorPosition(textFieldValue: TextFieldValue): Pair<Int, Int> {
+    val cursorIndex = textFieldValue.selection.start
+    val textBeforeCursor = textFieldValue.text.substring(0, cursorIndex)
+    val line = textBeforeCursor.count { it == '\n' } + 1
+    val col = cursorIndex - (textBeforeCursor.lastIndexOf('\n') + 1) + 1
+    return Pair(line, col)
+}
+
 @Composable
 fun TabContent1() {
-    Box(
+    val initialCode = """
+        fun main() {
+            println("Hello, Kotlin!")
+        }
+    """.trimIndent()
+
+    var textFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialCode,
+                selection = TextRange(0) // cursor at start
+            )
+        )
+    }
+
+    val (line, col) = cursorPosition(textFieldValue)
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Code editor area
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(24.dp),
+            contentAlignment = Alignment.TopStart
+        ) {
+            BasicTextField(
+                value = textFieldValue,
+                onValueChange = { textFieldValue = it },
+                textStyle = TextStyle(
+                    fontSize = 16.sp,
+                    lineHeight = 24.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = Color.Black
+                ),
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        // Status bar
+        EditorStatusBar(line = line, col = col)
+    }
+}
+
+@Composable
+fun EditorStatusBar(line: Int, col: Int) {
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.TopStart
+            .fillMaxWidth()
+            .background(Color(0xFFE8E8E8))
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Spacer(modifier = Modifier.weight(1f))
         Text(
-            text = """
-                fun main() {
-                    println("Hello, Kotlin!")
-                }
-            """.trimIndent(),
-            fontSize = 16.sp,
-            lineHeight = 24.sp
+            text = "Ln $line, Col $col",
+            fontSize = 12.sp,
+            color = Color(0xFF555555),
+            fontFamily = FontFamily.Monospace
         )
     }
 }
