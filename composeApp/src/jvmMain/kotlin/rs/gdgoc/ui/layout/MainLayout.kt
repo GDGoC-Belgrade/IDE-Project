@@ -18,17 +18,18 @@ import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 import org.jetbrains.compose.splitpane.HorizontalSplitPane
 import org.jetbrains.compose.splitpane.SplitPaneState
 import org.jetbrains.compose.splitpane.VerticalSplitPane
+import rs.gdgoc.core.ConsoleViewModel
 import rs.gdgoc.ui.editor.TabScreen
 import rs.gdgoc.ui.panels.ConsolePanel
 import rs.gdgoc.ui.panels.HierarchyPanel
 import rs.gdgoc.ui.panels.RightSidebarPanel
-import rs.gdgoc.core.TerminalState
+//import rs.gdgoc.core.TerminalState
 
 
 @Composable
 fun MainLayout() {
     //terminal state
-    val terminalState = remember { TerminalState() }
+//    val terminalState = remember { TerminalState() }
 
     Row(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -41,7 +42,7 @@ fun MainLayout() {
         ) {}
 
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            VerticalEditorLayout(terminalState)
+            VerticalEditorLayout()
         }
 
         Column(
@@ -57,7 +58,7 @@ fun MainLayout() {
 
 @OptIn(ExperimentalSplitPaneApi::class)
 @Composable
-private fun VerticalEditorLayout(terminalState: TerminalState) {
+private fun VerticalEditorLayout() {
     val mainSplitPaneState = remember {
         SplitPaneState(
             initialPositionPercentage = 0.8f,
@@ -72,7 +73,8 @@ private fun VerticalEditorLayout(terminalState: TerminalState) {
             MainWorkspace()
         }
         second {
-            ConsolePanel(terminalState)
+            val viewModel = remember { ConsoleViewModel() }
+            ConsolePanel(viewModel)
         }
     }
 }
