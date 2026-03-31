@@ -18,14 +18,19 @@ import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 import org.jetbrains.compose.splitpane.HorizontalSplitPane
 import org.jetbrains.compose.splitpane.SplitPaneState
 import org.jetbrains.compose.splitpane.VerticalSplitPane
+import rs.gdgoc.core.ConsoleViewModel
 import rs.gdgoc.ui.editor.TabScreen
 import rs.gdgoc.ui.panels.ConsolePanel
 import rs.gdgoc.ui.panels.HierarchyPanel
 import rs.gdgoc.ui.panels.RightSidebarPanel
+//import rs.gdgoc.core.TerminalState
 
 
 @Composable
 fun MainLayout() {
+    //terminal state
+//    val terminalState = remember { TerminalState() }
+
     Row(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -68,7 +73,8 @@ private fun VerticalEditorLayout() {
             MainWorkspace()
         }
         second {
-            ConsolePanel()
+            val viewModel = remember { ConsoleViewModel() }
+            ConsolePanel(viewModel)
         }
     }
 }
